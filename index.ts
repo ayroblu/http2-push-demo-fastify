@@ -26,7 +26,8 @@ app.get('/data.json', async (_req, reply) => {
   reply.send({hello: 'world'});
 });
 
-app.listen({port: 3000}).catch(console.error);
+const port = (process.env.PORT && parseInt(process.env.PORT, 10)) || 3000
+app.listen({port}).catch(console.error);
 
 function pushResponses(stream: ServerHttp2Stream) {
   stream.pushStream({ ':path': '/data.json' }, (err, pushStream) => {
