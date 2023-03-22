@@ -33,7 +33,7 @@ function pushResponses(stream: ServerHttp2Stream) {
     if (err) {
       throw err
     }
-    pushStream.respond({ ':status': 200, 'content-type': 'application/json' })
+    pushStream.respond({ ':status': 200, 'content-type': 'application/json; charset=utf-8' })
     pushStream.end(JSON.stringify({hello: 'new world'}))
   })
 }
