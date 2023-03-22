@@ -13,10 +13,16 @@ const app = fastify({
 });
 
 app.get('/', (req, reply) => {
-  pushResponses(req.raw.stream)
-  reply.type('text/html').send(getHtmlStream());
+  const pushStream = req.raw.stream;
+  if (pushStream.pushAllowed) {
+    pushResponses(req.raw.stream)
+  }
+  reply.headers({
+    'Cache-Control': 'no-cache, no-store, must-revalidate, pre-check=0, post-check=0',
+  }).type('text/html; charset=utf-8').send(getHtmlStream());
 });
-app.get('/data.json', (_req, reply) => {
+app.get('/data.json', async (_req, reply) => {
+  await wait(4_000);
   reply.send({hello: 'world'});
 });
 
@@ -34,6 +40,7 @@ function pushResponses(stream: ServerHttp2Stream) {
 
 function getHtmlStream() {
   const readableStream = new stream.Readable();
+  readableStream._read = ()=>{};
 
   pushHtmlStream(readableStream).catch(console.error);
 
@@ -45,15 +52,27 @@ async function pushHtmlStream(readableStream: stream.Readable) {
 <title>demo site</title>
 </head>
 `)
-await wait(3_000);
+  await wait(800);
   readableStream.push(`<body>
 <div>Content</div>
 `)
-await wait(800);
+  await wait(800);
   readableStream.push(`
 <div>Content 2</div>
+<script async>
+fetch('/data.json').then(res => {
+  if (res.ok) {
+    return res.text();
+  }
+  throw new Error('not ok');
+}).then(text => {
+  const el = document.createElement('div');
+  el.innerText = text
+  document.body.appendChild(el);
+}).catch(console.error);
+</script>
 `)
-await wait(800);
+  await wait(800);
   readableStream.push(`
 <div>Content 3</div>
 </body>
